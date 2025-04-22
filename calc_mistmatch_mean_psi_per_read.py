@@ -69,58 +69,11 @@ def get_norm_hist(in_frac, hist_range=[0, 1], num_bins=100):
     return bin_edges, bin_centers, counts, pdf
 
 
-data_dir = '/home/adrian/Data/TRR319_RMaP_B01/Adrian/4sU'
-ds = 'chr1'
-bam_file_0h = os.path.join(data_dir, f'hiPSC-CM_0h_4sU_{ds}.bam')
-bam_file_24h = os.path.join(data_dir, f'hiPSC-CM_24h_4sU_{ds}.bam')
-
-img_out = '/home/adrian/img_out/4sU'
-os.makedirs(img_out, exist_ok=True)
-
-arr_total_0h, frac_0h, mod_prob_0h = get_frac_matched_and_mod_prob(bam_file_0h)
-arr_total_24h, frac_24h, mod_prob_24h = get_frac_matched_and_mod_prob(bam_file_24h)
-
-total_counts_0h = len(frac_0h)
-total_counts_24h = len(frac_24h)
-
-bin_edges_0h, bin_centers_0h, counts_0h, pdf_0h = get_norm_hist(frac_0h)
-bin_edges_24h, bin_centers_24h, counts_24h, pdf_24h = get_norm_hist(frac_24h)
-
-### scatter num U vs. % matched ###
-plt.figure(figsize=(5*cm, 5*cm))
-plt.plot(arr_total_0h[:, 0], frac_0h, '.', c='b', markersize=1, markeredgewidth=0, label=f'0h ({total_counts_0h})')
-plt.plot(arr_total_24h[:, 0], frac_24h, '.', c='r', markersize=1, markeredgewidth=0, label=f'24h ({total_counts_24h})')
-plt.xlim([0, 6000])
-plt.ylim([0, 1])
-plt.xlabel('Num. U\'s in ref. seq.')
-plt.ylabel('Fraction U\'s matched per read')
-plt.title(f'{ds}')
-lgnd = plt.legend()
-lgnd.legend_handles[0].set_markersize(3)
-lgnd.legend_handles[1].set_markersize(3)
-plt.savefig(os.path.join(img_out, f'scatter_numU_frac_matched_chr1.{FMT}'), **fig_kwargs)
-
-### pdf psi per read ###
-bin_edges_mod_prob_0h, bin_centers_mod_prob_0h, counts_mod_prob_0h, pdf_mod_prob_0h = get_norm_hist(mod_prob_0h)
-bin_edges_mod_prob_24h, bin_centers_mod_prob_24h, counts_mod_prob_24h, pdf_mod_prob_24h = get_norm_hist(mod_prob_24h)
-
-plt.figure(figsize=(5*cm, 5*cm))
-plt.plot(bin_centers_mod_prob_0h, pdf_mod_prob_0h, c='b', label=f'0h ({total_counts_0h})')
-plt.plot(bin_centers_mod_prob_24h, pdf_mod_prob_24h, c='r', label=f'24h ({total_counts_24h})')
-plt.xlim([0, 1])
-plt.ylim([0, 0.5])
-plt.xlabel('Mean $P(\Psi)$ per read')
-plt.ylabel('PDF')
-plt.title(f'{ds}')
-plt.legend()
-plt.savefig(os.path.join(img_out, f'hist_mean_mod_prob_chr1.{FMT}'), **fig_kwargs)
-
-### scatter % matched vs psi ###
-def plot_scatter_mod_prob_vs_frac_matched(in_mod_prob_0, in_frac_0, in_mod_prob_1, in_frac_1, in_title, out_filename):
+def plot_scatter_mod_prob_vs_frac_matched(in_res, in_title, out_filename):
     xyticks = np.linspace(0, 1, 5)
     plt.figure(figsize=(5*cm, 5*cm))
-    plt.plot(in_mod_prob_0, in_frac_0, '.', c='b', markersize=1, markeredgewidth=0, label=f'0h')
-    plt.plot(in_mod_prob_1, in_frac_1, '.', c='r', markersize=1, markeredgewidth=0, label=f'24h')
+    for tp in in_res.keys():
+        plt.plot(in_res[tp]['mod_prob'], in_res[tp]['frac'], '.', c=tp_colors[tp], markersize=1, markeredgewidth=0, label=tp)
     plt.xlim([0, 1])
     plt.ylim([0, 1])
     plt.xticks(xyticks)
@@ -134,42 +87,83 @@ def plot_scatter_mod_prob_vs_frac_matched(in_mod_prob_0, in_frac_0, in_mod_prob_
     plt.savefig(out_filename, **fig_kwargs)
 
 
-plot_scatter_mod_prob_vs_frac_matched(mod_prob_0h, frac_0h,
-                                      mod_prob_24h, frac_24h,
+data_dir = '/home/adrian/Data/TRR319_RMaP_B01/Adrian/4sU'
+ds = 'chr1'
+tps = ['0h', '4h', '24h']
+bam_files = {tp: os.path.join(data_dir, f'hiPSC-CM_{tp}_4sU_{ds}.bam') for tp in tps}
+
+img_out = '/home/adrian/img_out/4sU'
+os.makedirs(img_out, exist_ok=True)
+
+results = {tp: {} for tp in tps}
+for tp in tps:
+    results[tp]['arr_total'], results[tp]['frac'], results[tp]['mod_prob'] = get_frac_matched_and_mod_prob(bam_files[tp])
+    results[tp]['total_counts'] = len(results[tp]['frac'])
+    results[tp]['bin_edges'], results[tp]['bin_centers'], results[tp]['counts'], results[tp]['pdf'] = get_norm_hist(results[tp]['frac'])
+
+tp_colors = {
+    '0h': 'blue',
+    '4h': 'purple',
+    '24h': 'red'
+}
+
+### scatter num U vs. % matched ###
+plt.figure(figsize=(5*cm, 5*cm))
+for tp in tps:
+    plt.plot(results[tp]['arr_total'][:, 0], results[tp]['frac'], '.', c=tp_colors[tp], markersize=1, markeredgewidth=0, label=f"{tp} ({results[tp]['total_counts']})")
+plt.xlim([0, 6000])
+plt.ylim([0, 1])
+plt.xlabel('Num. U\'s in ref. seq.')
+plt.ylabel('Fraction U\'s matched per read')
+plt.title(f'{ds}')
+lgnd = plt.legend()
+for ind in range(len(tps)):
+    lgnd.legend_handles[ind].set_markersize(3)
+plt.savefig(os.path.join(img_out, f'scatter_numU_frac_matched_chr1.{FMT}'), **fig_kwargs)
+
+### pdf psi per read ###
+plt.figure(figsize=(5*cm, 5*cm))
+for tp in tps:
+    results[tp]['bin_edges_mod_prob'], results[tp]['bin_centers_mod_prob'], results[tp]['counts_mod_prob'], results[tp]['pdf_mod_prob'] = get_norm_hist(results[tp]['mod_prob'])
+    plt.plot(results[tp]['bin_centers_mod_prob'], results[tp]['pdf_mod_prob'], c=tp_colors[tp], label=f"{tp} ({results[tp]['total_counts']})")
+plt.xlim([0, 1])
+plt.ylim([0, 0.5])
+plt.xlabel('Mean $P(\Psi)$ per read')
+plt.ylabel('PDF')
+plt.title(f'{ds}')
+plt.legend()
+plt.savefig(os.path.join(img_out, f'hist_mean_mod_prob_chr1.{FMT}'), **fig_kwargs)
+
+
+### scatter % matched vs psi ###
+plot_scatter_mod_prob_vs_frac_matched(results,
                                       f'{ds}',
                                       os.path.join(img_out, f'scatter_mean_mod_prob_frac_matched_chr1.{FMT}')
                                       )
 
 ### CDF frac matched ###
 thresh_min_num_U = 100
-filtered_frac_0h = frac_0h[arr_total_0h[:, 0] >= thresh_min_num_U]
-filtered_frac_24h = frac_24h[arr_total_24h[:, 0] >= thresh_min_num_U]
-filtered_mod_prob_0h = mod_prob_0h[arr_total_0h[:, 0] >= thresh_min_num_U]
-filtered_mod_prob_24h = mod_prob_24h[arr_total_24h[:, 0] >= thresh_min_num_U]
+filtered_results = {tp: {} for tp in tps}
+for tp in tps:
+    filtered_results[tp]['frac'] = results[tp]['frac'][results[tp]['arr_total'][:, 0] >= thresh_min_num_U]
+    filtered_results[tp]['mod_prob'] = results[tp]['mod_prob'][results[tp]['arr_total'][:, 0] >= thresh_min_num_U]
+    filtered_results[tp]['num_reads'] = len(filtered_results[tp]['frac'])
 
-plot_scatter_mod_prob_vs_frac_matched(filtered_mod_prob_0h, filtered_frac_0h,
-                                      filtered_mod_prob_24h, filtered_frac_24h,
-                                      f'{ds}\nMin. {thresh_min_num_U} U\'s in ref. seq.',
-                                      os.path.join(img_out, f'scatter_mean_mod_prob_frac_matched_chr1_thresh{thresh_min_num_U}.{FMT}')
-                                      )
+    plot_scatter_mod_prob_vs_frac_matched(filtered_results,
+                                          f'{ds}\nMin. {thresh_min_num_U} U\'s in ref. seq.',
+                                          os.path.join(img_out, f'scatter_mean_mod_prob_frac_matched_chr1_thresh{thresh_min_num_U}.{FMT}')
+                                          )
 
-
-num_reads_0h = len(filtered_frac_0h)
-num_reads_24h = len(filtered_frac_24h)
-
-bin_edges_0h, bin_centers_0h, counts_0h, pdf_0h = get_norm_hist(filtered_frac_0h)
-bin_edges_24h, bin_centers_24h, counts_24h, pdf_24h = get_norm_hist(filtered_frac_24h)
-
-cdf_0h = np.cumsum(pdf_0h)
-cdf_24h = np.cumsum(pdf_24h)
+    filtered_results[tp]['bin_edges'], filtered_results[tp]['bin_centers'], filtered_results[tp]['counts'], filtered_results[tp]['pdf'] = get_norm_hist(filtered_results[tp]['frac'])
+    filtered_results[tp]['cdf'] = np.cumsum(filtered_results[tp]['pdf'])
 
 plt.figure(figsize=(5*cm, 5*cm))
 # plt.hist(frac_0h, range=[0, 1], bins=50, log=True, label='0h')
 # plt.hist(frac_24h, range=[0, 1], bins=50, log=True, label='24h')
 # plt.semilogy(bin_centers_0h, pdf_0h, c='b', label=f'0h filtered ({num_reads_0h})')
 # plt.semilogy(bin_centers_24h, pdf_24h, c='r', label=f'24h filtered ({num_reads_24h})')
-plt.semilogy(bin_centers_0h, cdf_0h, c='b', label=f'0h ({num_reads_0h})')
-plt.semilogy(bin_centers_24h, cdf_24h, c='r', label=f'24h ({num_reads_24h})')
+for tp in tps:
+    plt.semilogy(filtered_results[tp]['bin_centers'], filtered_results[tp]['cdf'], c=tp_colors[tp], label=f"{tp} ({filtered_results[tp]['num_reads']})")
 # plt.plot(bin_centers_0h, cdf_0h, c='b', label=f'0h ({num_reads_0h})')
 # plt.plot(bin_centers_24h, cdf_24h, c='r', label=f'24h ({num_reads_24h})')
 plt.xlim([0, 1])
