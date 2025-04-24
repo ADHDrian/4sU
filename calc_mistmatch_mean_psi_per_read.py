@@ -133,18 +133,25 @@ def plot_scatter(in_res, var_x, var_y, lim_x, lim_y, label_x, label_y, plot_titl
     plt.savefig(out_filename, **fig_kwargs)
 
 
-def plot_2d_hist(tp_res, var_x, var_y, lim_x, lim_y, label_x, label_y, plot_title, out_filename):
+def plot_2d_hist(tp_res, var_x, var_y, lim_x, lim_y, label_x, label_y, plot_title, out_filename, sep_slope, sep_portions):
     xticks = np.linspace(*lim_x, 5)
     yticks = np.linspace(*lim_y, 5)
 
+    num_bins = 50
     mat_z, bins_x, bins_y = np.histogram2d(tp_res[var_x], tp_res[var_y],
-                                           range=[lim_x, lim_y], bins=50)
+                                           range=[lim_x, lim_y], bins=num_bins)
 
-    separator_y = bins_x * 12.5 / 0.5
+    separator_y = bins_x * sep_slope
 
     plt.figure(figsize=(5*cm, 5*cm))
     plt.imshow(np.log10(mat_z.T+1), vmax=3, extent=lim_x+lim_y, aspect='auto', origin='lower')
+
+    sep_perc = np.round(sep_portions / np.sum(sep_portions) * 100.0, 1)
+
     plt.plot(bins_x, separator_y, 'r--')
+    plt.text(0.5, separator_y[int(num_bins/2)]+5, f'{sep_portions[0]} ({sep_perc[0]}%)', ha='center', va='bottom', c='r')
+    plt.text(0.5, separator_y[int(num_bins/2)]-5, f'{sep_portions[1]} ({sep_perc[1]}%)', ha='center', va='top', c='r')
+
     plt.xlim(lim_x)
     plt.ylim(lim_y)
     plt.xticks(xticks)
@@ -271,7 +278,20 @@ plot_scatter(results,
              out_filename=os.path.join(img_out, f'scatter_mean_mod_prob_phred_score_chr1.{FMT}')
              )
 
+separator_slope = 12.5 / 0.5
+
+
+def get_read_portions_by_separtor(tp_res, var_x, var_y, sep_slope):
+    sep_val = tp_res[var_y] / tp_res[var_x]
+    mask = tp_res[var_x] > 0
+    prop_above = np.sum((sep_val >= sep_slope) * mask)
+    prop_below = np.sum((sep_val < sep_slope) * mask)
+    return prop_above, prop_below
+
+
 for tp in tps:
+    portions = get_read_portions_by_separtor(results[tp], 'mod_prob', 'phred_score', separator_slope)
+
     plot_2d_hist(results[tp],
                  var_x='mod_prob',
                  var_y='phred_score',
@@ -280,7 +300,9 @@ for tp in tps:
                  label_x=f'Mean $P(\Psi)$ per read, q{int(quantile_psi*100)}',
                  label_y=f'Mean phred score per read, q{int(quantile_phred*100)}',
                  plot_title=f'{ds}, {tp}',
-                 out_filename=os.path.join(img_out, f'hist2d_mean_mod_prob_phred_score_chr1_{tp}.{FMT}')
+                 out_filename=os.path.join(img_out, f'hist2d_mean_mod_prob_phred_score_chr1_{tp}.{FMT}'),
+                 sep_slope=separator_slope,
+                 sep_portions=portions
                  )
 
 ### CDF frac matched ###
