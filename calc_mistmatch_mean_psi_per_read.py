@@ -86,16 +86,32 @@ def get_read_num_bases_matched(in_read):
     return [num_total, num_matched]
 
 
+def get_in_del_ratio(in_read):
+    cigartuples = in_read.cigartuples
+    op_len = {op: 0 for op in [0, 1, 2]}   # 0: M; 1: I; 2: D
+    for tup in cigartuples:
+        if tup[0] > 2:
+            continue
+        else:
+            op_len[tup[0]] = op_len[tup[0]] + tup[1]
+    total_len = sum(op_len.values())
+    ratio_in = op_len[1] / total_len
+    ratio_del = op_len[2] / total_len
+    return ratio_in, ratio_del
+
+
 def get_stats_from_reads(in_bam_file, in_quantile_phred, in_quantile_psi):
     num_total_matched = []
     mean_mod_prob = []
     mean_phred_score = []
+    in_del_ratio = []
     mapping_score = []
     with pysam.AlignmentFile(in_bam_file, 'rb') as bam:
         for read in tqdm(bam.fetch()):
             # num_total_matched.append(get_num_bases_matched(read))
             mean_mod_prob.append(get_read_mean_mod_prob(read, in_quantile_psi))
             mean_phred_score.append(get_read_mean_phred_score(read, in_quantile_phred))
+            in_del_ratio.append(get_in_del_ratio(read))
             mapping_score.append(read.mapping_quality)
 
     if len(num_total_matched):
@@ -104,7 +120,9 @@ def get_stats_from_reads(in_bam_file, in_quantile_phred, in_quantile_psi):
     else:
         arr_total_matched = []
         frac_matched = []
-    return arr_total_matched, frac_matched, np.array(mean_mod_prob), np.array(mean_phred_score), np.array(mapping_score)
+
+    in_ratio, del_ratio = np.vstack(in_del_ratio).T
+    return arr_total_matched, frac_matched, np.array(mean_mod_prob), np.array(mean_phred_score), np.array(mapping_score), np.array(in_ratio), np.array(del_ratio)
 
 
 def get_norm_hist(in_data, hist_range=[0, 1], num_bins=100):
@@ -183,7 +201,7 @@ os.makedirs(img_out, exist_ok=True)
 
 results = {tp: {} for tp in tps}
 for tp in tps:
-    results[tp]['arr_total'], results[tp]['frac'], results[tp]['mod_prob'], results[tp]['phred_score'], results[tp]['map_score'] = get_stats_from_reads(bam_files[tp], quantile_phred, quantile_psi)
+    results[tp]['arr_total'], results[tp]['frac'], results[tp]['mod_prob'], results[tp]['phred_score'], results[tp]['map_score'], results[tp]['in_ratio'], results[tp]['del_ratio'] = get_stats_from_reads(bam_files[tp], quantile_phred, quantile_psi)
     results[tp]['total_counts'] = len(results[tp]['frac'])
     results[tp]['bin_edges'], results[tp]['bin_centers'], results[tp]['counts'], results[tp]['pdf'] = get_norm_hist(results[tp]['frac'])
 
@@ -214,6 +232,37 @@ plt.ylabel('PDF')
 plt.legend(loc='upper right')
 plt.title(f'{ds}, q{int(quantile_phred*100)}')
 plt.savefig(os.path.join(img_out, f'phred_score_q{int(quantile_phred*100)}.{FMT}'), **fig_kwargs)
+
+### in-del ratio ###
+x_max = 0.05
+plt.figure(figsize=(10*cm, 5*cm))
+dict_in_del = {'in': 'insertion', 'del': 'deletion'}
+for subplot_ind, in_del in enumerate(['in', 'del']):
+    plt.subplot(1, 2, subplot_ind+1)
+    for tp in tps:
+        edges, centers, counts, pdf = get_norm_hist(results[tp][f'{in_del}_ratio'], hist_range=[0, x_max], num_bins=50)
+        plt.plot(centers, pdf, c=tp_colors[tp], label=tp)
+    plt.xticks(np.linspace(0, x_max, 3))
+    plt.xlim([0, x_max])
+    plt.xlabel(f'Ratio {dict_in_del[in_del]}')
+    plt.ylabel('PDF')
+    plt.legend(loc='upper right')
+plt.suptitle(f'{ds}')
+plt.savefig(os.path.join(img_out, f'ratio_in_del_{ds}.{FMT}'), **fig_kwargs)
+
+
+x_max = 0.1
+plt.figure(figsize=(5*cm, 5*cm))
+for tp in tps:
+    edges, centers, counts, pdf = get_norm_hist(results[tp][f'in_ratio']+results[tp][f'del_ratio'], hist_range=[0, x_max], num_bins=50)
+    plt.plot(centers, pdf, c=tp_colors[tp], label=tp)
+plt.xticks(np.linspace(0, x_max, 3))
+plt.xlim([0, x_max])
+plt.xlabel(f'Ratio indel')
+plt.ylabel('PDF')
+plt.legend(loc='upper right')
+plt.title(f'{ds}')
+plt.savefig(os.path.join(img_out, f'ratio_in_del_combined_{ds}.{FMT}'), **fig_kwargs)
 
 ### scatter num U vs. % matched ###
 # plt.figure(figsize=(5*cm, 5*cm))
