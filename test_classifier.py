@@ -6,7 +6,7 @@ from helper_functions import get_feature_and_label
 
 # load #
 clf_dir = '/home/adrian/Data/TRR319_RMaP_B01/Adrian/4sU/classifier'
-clf_name = 'trial0'
+clf_name = 'trial1'
 with open(os.path.join(clf_dir, clf_name, 'config.json'), 'r') as h_cfg:
     cfg = json.load(h_cfg)
 with open(os.path.join(clf_dir, clf_name, 'clf.pkl'), 'rb') as h_clf:

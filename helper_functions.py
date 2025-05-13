@@ -2,6 +2,7 @@ import pysam
 import numpy as np
 from tqdm import tqdm
 from random import sample
+from collections import Counter
 
 
 def get_read_mod_prob(in_read, in_quantile, mod_key=('T', 1, 17802)):
@@ -12,7 +13,7 @@ def get_read_mod_prob(in_read, in_quantile, mod_key=('T', 1, 17802)):
 
 
 def get_read_phred_score(in_read, in_quantile):
-    phred_scores = np.array(in_read.query_qualities.tolist())
+    phred_scores = np.array(in_read.query_qualities.tolist()) / 50.0
     return np.quantile(phred_scores, in_quantile)
 
 
@@ -27,25 +28,37 @@ def get_in_del_ratio(in_read):
     total_len = sum(op_len.values())
     ratio_in = op_len[1] / total_len
     ratio_del = op_len[2] / total_len
-    return ratio_in, ratio_del
+    return ratio_in + ratio_del
+
+
+def get_u_ratio(in_read):
+    base_counts = Counter(in_read.query_sequence)
+    # total = np.sum(list(base_counts.values()))
+    return (base_counts['T'] + base_counts['A']) / (base_counts['C'] + base_counts['G'])
+
+
+def get_read_length(in_read, a_max=5000):
+    # return np.clip(in_read.query_length, 0, a_max) / a_max
+    return 1.0 / in_read.query_length
 
 
 def get_features_from_reads(in_bam_file, in_quantile_phred, in_quantile_psi):
-    mod_prob = []
-    phred_score = []
-    in_del_ratio = []
+    read_features = []
     with pysam.AlignmentFile(in_bam_file, 'rb') as bam:
         for read in tqdm(bam.fetch()):
-            mod_prob.append(get_read_mod_prob(read, in_quantile_psi))
-            phred_score.append(get_read_phred_score(read, in_quantile_phred))
-            in_del_ratio.append(get_in_del_ratio(read))
-    feature_mat = np.vstack([mod_prob, np.array(phred_score)/50.0, np.vstack(in_del_ratio).sum(axis=1)]).T
+            read_features.append([
+                get_read_mod_prob(read, in_quantile_psi),
+                get_read_phred_score(read, in_quantile_phred),
+                get_in_del_ratio(read)
+            ])
+    feature_mat = np.vstack(read_features)
     return feature_mat
 
 
 def get_feature_and_label(bam_files, num_samples, in_cfg):
     tp_feature = {tp: {} for tp in in_cfg['tps']}
     for tp in in_cfg['tps']:
+        print(f'Collecting features from {tp}:')
         tp_feature[tp] = get_features_from_reads(bam_files[tp], in_cfg['quantile_phred'], in_cfg['quantile_psi'])
 
     actual_num_samples = min(min(tp_feature['0h'].shape[0], tp_feature['24h'].shape[0]), num_samples)

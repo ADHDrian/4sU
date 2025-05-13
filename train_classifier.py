@@ -4,7 +4,7 @@ import pickle
 import json
 from helper_functions import get_feature_and_label
 
-
+clf_name = 'trial1'
 cfg = {
     'data_dir': '/home/adrian/Data/TRR319_RMaP_B01/Adrian/4sU',
     'train_ds': 'chr1',
@@ -24,7 +24,6 @@ print(f"Train on {cfg['train_ds']}, {len(train_y)} reads, accuracy {train_acc:.3
 
 # save #
 clf_dir = '/home/adrian/Data/TRR319_RMaP_B01/Adrian/4sU/classifier'
-clf_name = 'trial0'
 os.makedirs(os.path.join(clf_dir, clf_name), exist_ok=True)
 with open(os.path.join(clf_dir, clf_name, 'clf.pkl'), 'wb') as out_pkl:
     pickle.dump(clf, out_pkl)
