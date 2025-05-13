@@ -33,23 +33,49 @@ def get_in_del_ratio(in_read):
 
 def get_u_ratio(in_read):
     base_counts = Counter(in_read.query_sequence)
-    # total = np.sum(list(base_counts.values()))
-    return (base_counts['T'] + base_counts['A']) / (base_counts['C'] + base_counts['G'])
+    total = np.sum(list(base_counts.values()))
+    return base_counts['T'] / total
+    # return (base_counts['T'] + base_counts['A']) / (base_counts['C'] + base_counts['G'])
 
 
-def get_read_length(in_read, a_max=5000):
+def get_mapq(in_read):
+    return in_read.mapping_quality
+
+
+def get_read_length(in_read, read_len_min=100.0, a_max=5000.0):
     # return np.clip(in_read.query_length, 0, a_max) / a_max
-    return 1.0 / in_read.query_length
+    return read_len_min / np.clip(in_read.query_length, a_min=read_len_min, a_max=None)
 
 
-def get_features_from_reads(in_bam_file, in_quantile_phred, in_quantile_psi):
+def get_mod_occupancy(in_read, in_mod, in_thesh_mod=0.5, min_locs=1):
+    mod_tags = {
+        'm6A': ('A', 0, 'a'),
+        'psi': ('T', 0, 17802)
+    }
+    if in_read.modified_bases is None:
+        mod_mean_occupancy = 0.0
+    else:
+        read_mod_probs = np.array([this_tup[1] for this_tup in in_read.modified_bases.get(mod_tags[in_mod], [])]) / 255.0
+        if len(read_mod_probs) >= min_locs:
+            mod_mean_occupancy = np.mean(read_mod_probs >= in_thesh_mod)
+        else:
+            mod_mean_occupancy = 0.0
+    return mod_mean_occupancy
+
+
+def get_features_from_reads(in_bam_file, in_cfg):
     read_features = []
     with pysam.AlignmentFile(in_bam_file, 'rb') as bam:
         for read in tqdm(bam.fetch()):
             read_features.append([
-                get_read_mod_prob(read, in_quantile_psi),
-                get_read_phred_score(read, in_quantile_phred),
-                get_in_del_ratio(read)
+                get_read_mod_prob(read, in_cfg['quantile_psi']),
+                get_read_phred_score(read, in_cfg['quantile_phred']),
+                get_in_del_ratio(read),
+                get_u_ratio(read),
+                get_mapq(read),
+                get_read_length(read, read_len_min=in_cfg['read_len_min']),
+                get_mod_occupancy(read, 'psi', in_cfg['thresh_mod']),
+                get_mod_occupancy(read, 'm6A', in_cfg['thresh_mod'])
             ])
     feature_mat = np.vstack(read_features)
     return feature_mat
@@ -59,7 +85,7 @@ def get_feature_and_label(bam_files, num_samples, in_cfg):
     tp_feature = {tp: {} for tp in in_cfg['tps']}
     for tp in in_cfg['tps']:
         print(f'Collecting features from {tp}:')
-        tp_feature[tp] = get_features_from_reads(bam_files[tp], in_cfg['quantile_phred'], in_cfg['quantile_psi'])
+        tp_feature[tp] = get_features_from_reads(bam_files[tp], in_cfg)
 
     actual_num_samples = min(min(tp_feature['0h'].shape[0], tp_feature['24h'].shape[0]), num_samples)
     if actual_num_samples < num_samples:
