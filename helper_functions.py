@@ -4,11 +4,16 @@ from tqdm import tqdm
 from random import sample
 from collections import Counter
 
+mod_tags = {
+    'm6A': ('A', 0, 'a'),
+    'psi': ('T', 0, 17802)
+}
 
-def get_read_mod_prob(in_read, in_quantile, mod_key=('T', 1, 17802)):
+
+def get_read_mod_prob(in_read, in_mod, in_quantile):
     if in_read.modified_bases is None:
         return 0.0
-    pos_prob = in_read.modified_bases.get(mod_key, [(0, 0.0)])
+    pos_prob = in_read.modified_bases.get(mod_tags[in_mod], [(0, 0.0)])
     return np.quantile([prob for pos, prob in pos_prob], in_quantile) / 255.0
 
 
@@ -48,10 +53,6 @@ def get_read_length(in_read, read_len_min=100.0, a_max=5000.0):
 
 
 def get_mod_occupancy(in_read, in_mod, in_thesh_mod=0.5, min_locs=1):
-    mod_tags = {
-        'm6A': ('A', 0, 'a'),
-        'psi': ('T', 0, 17802)
-    }
     if in_read.modified_bases is None:
         mod_mean_occupancy = 0.0
     else:
@@ -68,7 +69,8 @@ def get_features_from_reads(in_bam_file, in_cfg):
     with pysam.AlignmentFile(in_bam_file, 'rb') as bam:
         for read in tqdm(bam.fetch()):
             read_features.append([
-                get_read_mod_prob(read, in_cfg['quantile_psi']),
+                get_read_mod_prob(read, 'psi', in_cfg['quantile_psi']),
+                get_read_mod_prob(read, 'm6A', in_cfg['quantile_m6A']),
                 get_read_phred_score(read, in_cfg['quantile_phred']),
                 get_in_del_ratio(read),
                 get_u_ratio(read),
