@@ -1,10 +1,11 @@
 import os
 from sklearn.linear_model import LogisticRegression
+from sklearn.svm import SVC
 import pickle
 import json
 from helper_functions import get_feature_and_label
 
-clf_name = 'v0_thresh'
+clf_name = 'svm2_thresh'
 cfg = {
     'data_dir': '/home/adrian/Data/TRR319_RMaP_B01/Adrian/4sU',
     'train_ds': 'chr1',
@@ -15,13 +16,17 @@ cfg = {
     'read_len_min': 50,
     'num_train_samples': 30000,
     'thresh_mod': 0.5,
-    'normalize': True
+    'normalize': False,
+    'svm_kernel': 'poly',
+    'svm_c': 1.0,
+    'svm_degree': 2
 }
 
 # train #
 train_bam_files = {tp: os.path.join(cfg['data_dir'], f"hiPSC-CM_{tp}_4sU_{cfg['train_ds']}.thresh.bam") for tp in cfg['tps']}
 train_X, train_y = get_feature_and_label(train_bam_files, cfg['num_train_samples'], cfg)
-clf = LogisticRegression(random_state=0, verbose=True).fit(train_X, train_y)
+# clf = LogisticRegression(random_state=0, verbose=True).fit(train_X, train_y)
+clf = SVC(kernel=cfg['svm_kernel'], C=cfg['svm_c'], gamma="auto", degree=cfg['svm_degree'], verbose=True).fit(train_X, train_y)
 train_acc = clf.score(train_X, train_y)
 print(clf_name)
 print(f"Train on {cfg['train_ds']}, {len(train_y)} reads, accuracy {train_acc:.3f}")

@@ -1,8 +1,12 @@
 import pysam
 import numpy as np
 from tqdm import tqdm
+import random
 from random import sample
 from collections import Counter
+
+
+random.seed(0)
 
 mod_tags = {
     'm6A': ('A', 0, 'a'),
