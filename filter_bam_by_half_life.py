@@ -57,15 +57,15 @@ def get_thresholded_df_gene_bed(in_rate_quantile):
     return out_df_gene_bed
 
 
-bam_dir = '/home/adrian/Data/TRR319_RMaP_B01/Adrian/4sU/'
+bam_dir = '/home/adrian/Data/TRR319_RMaP_B01/Adrian/4sU/bam'
 half_life_file = '/home/adrian/Data/TRR319_RMaP_B01/gene-estimates-annotated-pulseRTc-0-1-2-4-6-8-16.csv'
 gene_bed_file = '~/Data/genomes/homo_sapiens/GRCh38_102/gene.ensembl_havana.GRCh38.102.bed'
 img_out = '/home/adrian/img_out/4sU'
 
-this_chrom = '4'
-rate_quantile = 0.5
-
-df_gene_bed_thresh = get_thresholded_df_gene_bed(rate_quantile)
-
-for this_tp in ['0h', '24h']:
-    filter_bam_by_gene_bed(this_tp, this_chrom, df_gene_bed_thresh)
+# this_chrom = '5'
+for this_chrom in [str(this_chr) for this_chr in range(1, 23)] + ['X']:
+    print(f'chr{this_chrom}')
+    rate_quantile = 0.5
+    df_gene_bed_thresh = get_thresholded_df_gene_bed(rate_quantile)
+    for this_tp in ['0h', '24h']:
+        filter_bam_by_gene_bed(this_tp, this_chrom, df_gene_bed_thresh)

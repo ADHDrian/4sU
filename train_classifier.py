@@ -7,7 +7,7 @@ from helper_functions import get_feature_and_label
 
 clf_name = 'svm2_thresh'
 cfg = {
-    'data_dir': '/home/adrian/Data/TRR319_RMaP_B01/Adrian/4sU',
+    'data_dir': '/home/adrian/Data/TRR319_RMaP_B01/Adrian/4sU/bam',
     'train_ds': 'chr1',
     'tps': ['0h', '24h'],
     'tp_label': {'0h': 0, '24h': 1},
