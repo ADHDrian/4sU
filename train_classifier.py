@@ -4,7 +4,7 @@ import pickle
 import json
 from helper_functions import get_feature_and_label
 
-clf_name = 'trial9'
+clf_name = 'v0_thresh'
 cfg = {
     'data_dir': '/home/adrian/Data/TRR319_RMaP_B01/Adrian/4sU',
     'train_ds': 'chr1',
@@ -13,12 +13,13 @@ cfg = {
     'quantile_phred': 0.1,
     'quantile_psi': 0.99,
     'read_len_min': 50,
-    'num_train_samples': 100000,
-    'thresh_mod': 0.5
+    'num_train_samples': 30000,
+    'thresh_mod': 0.5,
+    'normalize': True
 }
 
 # train #
-train_bam_files = {tp: os.path.join(cfg['data_dir'], f"hiPSC-CM_{tp}_4sU_{cfg['train_ds']}.bam") for tp in cfg['tps']}
+train_bam_files = {tp: os.path.join(cfg['data_dir'], f"hiPSC-CM_{tp}_4sU_{cfg['train_ds']}.thresh.bam") for tp in cfg['tps']}
 train_X, train_y = get_feature_and_label(train_bam_files, cfg['num_train_samples'], cfg)
 clf = LogisticRegression(random_state=0, verbose=True).fit(train_X, train_y)
 train_acc = clf.score(train_X, train_y)

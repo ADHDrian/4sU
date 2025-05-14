@@ -64,13 +64,20 @@ def get_mod_occupancy(in_read, in_mod, in_thesh_mod=0.5, min_locs=1):
     return mod_mean_occupancy
 
 
+def get_norm_feature_mat(in_feature_mat):
+    # out_feature_mat = in_feature_mat - np.mean(in_feature_mat, axis=0)
+    # out_feature_mat = in_feature_mat / np.std(in_feature_mat, axis=0)
+    out_feature_mat = in_feature_mat / np.max(in_feature_mat, axis=0)
+    return out_feature_mat
+
+
 def get_features_from_reads(in_bam_file, in_cfg):
     read_features = []
     with pysam.AlignmentFile(in_bam_file, 'rb') as bam:
         for read in tqdm(bam.fetch()):
             read_features.append([
                 get_read_mod_prob(read, 'psi', in_cfg['quantile_psi']),
-                get_read_mod_prob(read, 'm6A', in_cfg['quantile_m6A']),
+                # get_read_mod_prob(read, 'm6A', in_cfg['quantile_m6A']),
                 get_read_phred_score(read, in_cfg['quantile_phred']),
                 get_in_del_ratio(read),
                 get_u_ratio(read),
@@ -98,5 +105,8 @@ def get_feature_and_label(bam_files, num_samples, in_cfg):
         tp_feature['24h'][sample(range(tp_feature['24h'].shape[0]), actual_num_samples)]
     ])
     out_y = np.concatenate([np.zeros(actual_num_samples), np.ones(actual_num_samples)])
+
+    if in_cfg.get('normalize', False):
+        out_X = get_norm_feature_mat(out_X)
 
     return out_X, out_y
