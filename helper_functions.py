@@ -97,12 +97,12 @@ def get_features_from_reads(in_bam_file, in_cfg):
 def get_feature_and_label(bam_files, num_samples, in_cfg):
     tp_feature = {tp: {} for tp in in_cfg['tps']}
     for tp in in_cfg['tps']:
-        print(f'Collecting features from {tp}:')
+        # print(f'Collecting features from {tp}:')
         tp_feature[tp] = get_features_from_reads(bam_files[tp], in_cfg)
 
     actual_num_samples = min(min(tp_feature['0h'].shape[0], tp_feature['24h'].shape[0]), num_samples)
-    if actual_num_samples < num_samples:
-        print(f'Actual num. samples used {actual_num_samples}')
+    # if actual_num_samples < num_samples:
+    #     print(f'Actual num. samples used {actual_num_samples}')
 
     out_X = np.vstack([
         tp_feature['0h'][sample(range(tp_feature['0h'].shape[0]), actual_num_samples)],
