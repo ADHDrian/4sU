@@ -26,5 +26,7 @@ for this_chr in [str(this_chr) for this_chr in range(2, 23)] + ['X']:
     chr_score[this_chr] = test_acc
     print(f'Test on {test_ds}, {len(test_y)} reads, accuracy {test_acc:.3f}')
 
-avg_test_acc = np.mean(list(chr_score.values))
-print(f'Mean accuracy: {avg_test_acc:2f}')
+for k, v in chr_score.items():
+    print(f'chr{k}: {v:.3f}')
+avg_test_acc = np.mean(list(chr_score.values()))
+print(f'Mean accuracy: {avg_test_acc:.3f}')
