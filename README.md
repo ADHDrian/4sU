@@ -1,0 +1,34 @@
+Package requirements (version numbers not critical):
+```
+matplotlib==3.10.3
+numpy==1.23.5
+pandas==2.2.3
+pysam==0.22.0
+scikit_learn==1.4.2
+tqdm==4.64.1
+```
+
+## Train
+```
+python3 train_classifier.py \
+--bam_positive /prj/TRR319_RMaP_B01/Adrian/4sU/bam/hiPSC-CM_24h_4sU_chr1.thresh.bam \
+--bam_negative /prj/TRR319_RMaP_B01/Adrian/4sU/bam/hiPSC-CM_0h_4sU_chr1.thresh.bam \
+--config ./assets/configs/svm2.json \
+--out_dir ${out_dir}
+```
+
+## Validate
+```
+python3 validate_classifier.py \
+--model_dir ./assets/train/svm2 \
+--bam_positive /prj/TRR319_RMaP_B01/TRR319_RMaP_B01/Adrian/4sU/bam/hiPSC-CM_24h_4sU_chr3.thresh.bam \
+--bam_negative /prj/TRR319_RMaP_B01/TRR319_RMaP_B01/Adrian/4sU/bam/hiPSC-CM_0h_4sU_chr3.thresh.bam
+```
+
+## Inference
+```
+python3 inference.py \
+--model_dir ./assets/train/svm2 \
+--bam /prj/TRR319_RMaP_B01/TRR319_RMaP_B01/Adrian/4sU/bam/hiPSC-CM_24h_4sU_chr2.thresh.bam \
+--out_file ${out_file}
+```
