@@ -52,4 +52,4 @@ python3 inference.py \
 --bam /prj/TRR319_RMaP_B01/Adrian/4sU/bam/hiPSC-CM_24h_4sU_chr2.thresh.bam \
 --out_file ${out_file}
 ```
-${out_file} would be a tsv file with read names and 0/1 (unlabelled/labelled) like `assets/inference/svm_chr2_24h.tsv`.
+`${out_file}` would be a tsv file with read names and 0/1 (unlabelled/labelled) that looks like `assets/inference/svm_chr2_24h.tsv`.
