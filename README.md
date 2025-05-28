@@ -21,6 +21,13 @@ python3 train_classifier.py \
 - `--bam_positive` contains reads that are labelled, `--bam_negative` unlabelled.
 - `--config` defines the hyperparameters of the classifier.
 
+When the training is finished (should take less than 10 minutes), it will displaying the following:
+```
+svm2
+Trained on 60000 reads, accuracy 0.794
+Finished
+```
+
 The trained model and its config are saved to `${out_dir}`.
 
 ## Validate
