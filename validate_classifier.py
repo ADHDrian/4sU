@@ -1,32 +1,23 @@
-import os
-import json
-import pickle
-from helper_functions import get_feature_and_label
-import numpy as np
+from helper_functions import load_model, get_feature_and_label
+from argparse import ArgumentParser
 
-# load #
-clf_dir = '/home/adrian/Data/TRR319_RMaP_B01/Adrian/4sU/classifier'
-clf_name = 'svm2_thresh'
-num_test_samples = 100000
 
-with open(os.path.join(clf_dir, clf_name, 'config.json'), 'r') as h_cfg:
-    cfg = json.load(h_cfg)
-with open(os.path.join(clf_dir, clf_name, 'clf.pkl'), 'rb') as h_clf:
-    clf = pickle.load(h_clf)
-print(f'{clf_name}')
+def main():
+    parser = ArgumentParser()
+    parser.add_argument('--model_dir', type=str, required=True,
+                        help='directory containing pickled classifier and config')
+    parser.add_argument('--bam_positive', type=str, required=True,
+                        help='bam file containing positive samples')
+    parser.add_argument('--bam_negative', type=str, required=True,
+                        help='bam file containing negative samples')
+    args = parser.parse_args()
 
-# test #
-chr_score = {}
-for this_chr in [str(this_chr) for this_chr in range(2, 23)] + ['X']:
-    test_ds = f'chr{this_chr}'
-    test_bam_files = {tp: os.path.join(cfg['data_dir'], f'hiPSC-CM_{tp}_4sU_{test_ds}.thresh.bam') for tp in cfg['tps']}
-    # test_bam_files = {tp: os.path.join(cfg['data_dir'], f'hiPSC-CM_{tp}_4sU_{test_ds}.bam') for tp in cfg['tps']}
-    test_X, test_y = get_feature_and_label(test_bam_files, num_test_samples, cfg)
-    test_acc = clf.score(test_X, test_y)
-    chr_score[this_chr] = test_acc
-    print(f'Test on {test_ds}, {len(test_y)} reads, accuracy {test_acc:.3f}')
+    clf, cfg = load_model(args)
+    validate_X, validate_y = get_feature_and_label(args.bam_positive, args.bam_negative, cfg)
+    validate_acc = clf.score(validate_X, validate_y)
+    print(f'Test on {len(validate_y)} reads, accuracy {validate_acc:.3f}')
 
-for k, v in chr_score.items():
-    print(f'chr{k}: {v:.3f}')
-avg_test_acc = np.mean(list(chr_score.values()))
-print(f'Mean accuracy: {avg_test_acc:.3f}')
+
+if __name__ == '__main__':
+    main()
+    print('Finished')

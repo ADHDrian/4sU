@@ -1,3 +1,6 @@
+import os
+import json
+import pickle
 import pysam
 import numpy as np
 from tqdm import tqdm
@@ -93,7 +96,7 @@ def get_features_from_reads(in_bam_file, in_cfg):
     return feature_mat
 
 
-def get_feature_and_label(in_bam_pos, in_bam_neg, in_cfg):
+def get_feature_and_label(in_bam_pos, in_bam_neg, in_cfg, num_samples=100000):
     # tp_feature = {tp: {} for tp in in_cfg['tps']}
     # for tp in in_cfg['tps']:
     #     # print(f'Collecting features from {tp}:')
@@ -101,7 +104,7 @@ def get_feature_and_label(in_bam_pos, in_bam_neg, in_cfg):
 
     feature_pos = get_features_from_reads(in_bam_pos, in_cfg)
     feature_neg = get_features_from_reads(in_bam_neg, in_cfg)
-    actual_num_samples = min(min(feature_neg.shape[0], feature_pos.shape[0]), in_cfg['num_train_samples'])
+    actual_num_samples = min(min(feature_neg.shape[0], feature_pos.shape[0]), num_samples)
     # if actual_num_samples < num_samples:
     #     print(f'Actual num. samples used {actual_num_samples}')
 
@@ -115,3 +118,12 @@ def get_feature_and_label(in_bam_pos, in_bam_neg, in_cfg):
         out_X = get_norm_feature_mat(out_X)
 
     return out_X, out_y
+
+
+def load_model(in_args):
+    with open(os.path.join(in_args.model_dir, 'config.json'), 'r') as h_cfg:
+        out_cfg = json.load(h_cfg)
+    with open(os.path.join(in_args.model_dir, 'clf.pkl'), 'rb') as h_clf:
+        out_clf = pickle.load(h_clf)
+    print(f"{out_cfg['name']} loaded")
+    return out_clf, out_cfg

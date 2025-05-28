@@ -38,7 +38,8 @@ def main():
     with open(args.config, 'r') as f_in:
         cfg = json.load(f_in)
 
-    train_X, train_y = get_feature_and_label(args.bam_positive, args.bam_negative, cfg)
+    train_X, train_y = get_feature_and_label(args.bam_positive, args.bam_negative, cfg,
+                                             num_samples=cfg['num_train_samples'])
     clf_trained = train_model(train_X, train_y, cfg)
     save_model(clf_trained, cfg, args)
 
