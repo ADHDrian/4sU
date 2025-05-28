@@ -18,6 +18,11 @@ python3 train_classifier.py \
 --out_dir ${out_dir}
 ```
 
+- `--bam_positive` contains reads that are labelled, `--bam_negative` unlabelled.
+- `--config` defines the hyperparameters of the classifier.
+
+The trained model and its config are saved to `${out_dir}`.
+
 ## Validate
 ```
 python3 validate_classifier.py \
