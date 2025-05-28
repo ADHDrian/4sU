@@ -45,9 +45,11 @@ Finished
 ```
 
 ## Inference
+Run inference on reads without known labels:
 ```
 python3 inference.py \
 --model_dir ./assets/train/svm2 \
---bam /prj/TRR319_RMaP_B01/TRR319_RMaP_B01/Adrian/4sU/bam/hiPSC-CM_24h_4sU_chr2.thresh.bam \
+--bam /prj/TRR319_RMaP_B01/Adrian/4sU/bam/hiPSC-CM_24h_4sU_chr2.thresh.bam \
 --out_file ${out_file}
 ```
+${out_file} would be a tsv file with read names and 0/1 (unlabelled/labelled) like `assets/inference/svm_chr2_24h.tsv`.
