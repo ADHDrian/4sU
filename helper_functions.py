@@ -76,9 +76,10 @@ def get_norm_feature_mat(in_feature_mat):
     return out_feature_mat
 
 
-def get_features_from_reads(in_bam_file, in_cfg):
+def get_features_from_reads(in_bam_file, in_cfg, return_read_name=False):
     print(f'Collecting features from {in_bam_file}')
     read_features = []
+    read_names = []
     with pysam.AlignmentFile(in_bam_file, 'rb') as bam:
         for read in tqdm(bam.fetch()):
             read_features.append([
@@ -92,8 +93,12 @@ def get_features_from_reads(in_bam_file, in_cfg):
                 get_mod_occupancy(read, 'psi', in_cfg['thresh_mod']),
                 get_mod_occupancy(read, 'm6A', in_cfg['thresh_mod'])
             ])
+            read_names.append(read.query_name)
     feature_mat = np.vstack(read_features)
-    return feature_mat
+    if return_read_name:
+        return feature_mat, read_names
+    else:
+        return feature_mat
 
 
 def get_feature_and_label(in_bam_pos, in_bam_neg, in_cfg, num_samples=100000):
