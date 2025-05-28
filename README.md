@@ -1,3 +1,4 @@
+# A simple classifier for 4sU-labelled reads
 Package requirements (version numbers not critical):
 ```
 matplotlib==3.10.3
