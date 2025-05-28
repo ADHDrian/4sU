@@ -7,6 +7,7 @@ from argparse import ArgumentParser
 
 
 def train_model(in_train_X, in_train_y, in_cfg):
+    print('Training:\n')
     clf = SVC(kernel=in_cfg['svm_kernel'], C=in_cfg['svm_c'], gamma="auto", degree=in_cfg['svm_degree'], verbose=True)
     clf.fit(in_train_X, in_train_y)
     train_acc = clf.score(in_train_X, in_train_y)

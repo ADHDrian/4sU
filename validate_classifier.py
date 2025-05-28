@@ -15,7 +15,7 @@ def main():
     clf, cfg = load_model(args)
     validate_X, validate_y = get_feature_and_label(args.bam_positive, args.bam_negative, cfg)
     validate_acc = clf.score(validate_X, validate_y)
-    print(f'Test on {len(validate_y)} reads, accuracy {validate_acc:.3f}')
+    print(f'Validate on {len(validate_y)} reads, accuracy {validate_acc:.3f}')
 
 
 if __name__ == '__main__':
