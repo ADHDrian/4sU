@@ -1,40 +1,48 @@
 import os
-from sklearn.linear_model import LogisticRegression
 from sklearn.svm import SVC
 import pickle
 import json
 from helper_functions import get_feature_and_label
+from argparse import ArgumentParser
 
-clf_name = 'svm2_thresh'
-cfg = {
-    'data_dir': '/home/adrian/Data/TRR319_RMaP_B01/Adrian/4sU/bam',
-    'train_ds': 'chr1',
-    'tps': ['0h', '24h'],
-    'tp_label': {'0h': 0, '24h': 1},
-    'quantile_phred': 0.1,
-    'quantile_psi': 0.99,
-    'read_len_min': 50,
-    'num_train_samples': 30000,
-    'thresh_mod': 0.5,
-    'normalize': False,
-    'svm_kernel': 'poly',
-    'svm_c': 1.0,
-    'svm_degree': 2
-}
 
-# train #
-train_bam_files = {tp: os.path.join(cfg['data_dir'], f"hiPSC-CM_{tp}_4sU_{cfg['train_ds']}.thresh.bam") for tp in cfg['tps']}
-train_X, train_y = get_feature_and_label(train_bam_files, cfg['num_train_samples'], cfg)
-# clf = LogisticRegression(random_state=0, verbose=True).fit(train_X, train_y)
-clf = SVC(kernel=cfg['svm_kernel'], C=cfg['svm_c'], gamma="auto", degree=cfg['svm_degree'], verbose=True).fit(train_X, train_y)
-train_acc = clf.score(train_X, train_y)
-print(clf_name)
-print(f"Train on {cfg['train_ds']}, {len(train_y)} reads, accuracy {train_acc:.3f}")
+def train_model(in_train_X, in_train_y, in_cfg):
+    clf = SVC(kernel=in_cfg['svm_kernel'], C=in_cfg['svm_c'], gamma="auto", degree=in_cfg['svm_degree'], verbose=True)
+    clf.fit(in_train_X, in_train_y)
+    train_acc = clf.score(in_train_X, in_train_y)
+    print(in_cfg['name'])
+    print(f"Trained on {len(in_train_y)} reads, accuracy {train_acc:.3f}")
+    return clf
 
-# save #
-clf_dir = '/home/adrian/Data/TRR319_RMaP_B01/Adrian/4sU/classifier'
-os.makedirs(os.path.join(clf_dir, clf_name), exist_ok=True)
-with open(os.path.join(clf_dir, clf_name, 'clf.pkl'), 'wb') as out_pkl:
-    pickle.dump(clf, out_pkl)
-with open(os.path.join(clf_dir, clf_name, 'config.json'), 'w') as out_cfg:
-    json.dump(cfg, out_cfg)
+
+def save_model(in_clf, in_cfg, in_args):
+    os.makedirs(os.path.join(in_args.out_dir, in_cfg['name']), exist_ok=True)
+    with open(os.path.join(in_args.out_dir, in_cfg['name'], 'clf.pkl'), 'wb') as out_pkl:
+        pickle.dump(in_clf, out_pkl)
+    with open(os.path.join(in_args.out_dir, in_cfg['name'], 'config.json'), 'w') as f_out:
+        json.dump(in_cfg, f_out)
+
+
+def main():
+    parser = ArgumentParser()
+    parser.add_argument('--bam_positive', type=str, required=True,
+                        help='bam file containing positive samples')
+    parser.add_argument('--bam_negative', type=str, required=True,
+                        help='bam file containing negative samples')
+    parser.add_argument('--config', type=str, required=True,
+                        help='model configuration in json format')
+    parser.add_argument('--out_dir', type=str, required=True,
+                        help='model output directory')
+    args = parser.parse_args()
+
+    with open(args.config, 'r') as f_in:
+        cfg = json.load(f_in)
+
+    train_X, train_y = get_feature_and_label(args.bam_positive, args.bam_negative, cfg)
+    clf_trained = train_model(train_X, train_y, cfg)
+    save_model(clf_trained, cfg, args)
+
+
+if __name__ == '__main__':
+    main()
+    print('Finished')

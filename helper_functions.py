@@ -4,8 +4,6 @@ from tqdm import tqdm
 import random
 from random import sample
 from collections import Counter
-
-
 random.seed(0)
 
 mod_tags = {
@@ -76,6 +74,7 @@ def get_norm_feature_mat(in_feature_mat):
 
 
 def get_features_from_reads(in_bam_file, in_cfg):
+    print(f'Collecting features from {in_bam_file}')
     read_features = []
     with pysam.AlignmentFile(in_bam_file, 'rb') as bam:
         for read in tqdm(bam.fetch()):
@@ -94,19 +93,21 @@ def get_features_from_reads(in_bam_file, in_cfg):
     return feature_mat
 
 
-def get_feature_and_label(bam_files, num_samples, in_cfg):
-    tp_feature = {tp: {} for tp in in_cfg['tps']}
-    for tp in in_cfg['tps']:
-        # print(f'Collecting features from {tp}:')
-        tp_feature[tp] = get_features_from_reads(bam_files[tp], in_cfg)
+def get_feature_and_label(in_bam_pos, in_bam_neg, in_cfg):
+    # tp_feature = {tp: {} for tp in in_cfg['tps']}
+    # for tp in in_cfg['tps']:
+    #     # print(f'Collecting features from {tp}:')
+    #     tp_feature[tp] = get_features_from_reads(bam_files[tp], in_cfg)
 
-    actual_num_samples = min(min(tp_feature['0h'].shape[0], tp_feature['24h'].shape[0]), num_samples)
+    feature_pos = get_features_from_reads(in_bam_pos, in_cfg)
+    feature_neg = get_features_from_reads(in_bam_neg, in_cfg)
+    actual_num_samples = min(min(feature_neg.shape[0], feature_pos.shape[0]), in_cfg['num_train_samples'])
     # if actual_num_samples < num_samples:
     #     print(f'Actual num. samples used {actual_num_samples}')
 
     out_X = np.vstack([
-        tp_feature['0h'][sample(range(tp_feature['0h'].shape[0]), actual_num_samples)],
-        tp_feature['24h'][sample(range(tp_feature['24h'].shape[0]), actual_num_samples)]
+        feature_neg[sample(range(feature_neg.shape[0]), actual_num_samples)],
+        feature_pos[sample(range(feature_pos.shape[0]), actual_num_samples)]
     ])
     out_y = np.concatenate([np.zeros(actual_num_samples), np.ones(actual_num_samples)])
 
