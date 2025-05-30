@@ -63,7 +63,7 @@ python3 filter_reads_by_transcript_decay_rate.py \
 --decay_rate_file ./assets/data/gene-estimates-annotated-pulseRTc-0-1-2-4-6-8-16.csv \
 --gene_bed_file ./assets/data/gene.ensembl_havana.GRCh38.102.bed
 ```
-Use `--decay_rate_quantile` to adjust the decay rate threshold (default 0.5).
+Use `--decay_rate_quantile` to adjust the decay rate quantile threshold (default 0.5, ie, q50).
 
 ## Features
 The default configuration uses the following features from each read:
