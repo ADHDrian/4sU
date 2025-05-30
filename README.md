@@ -64,3 +64,16 @@ python3 filter_reads_by_transcript_decay_rate.py \
 --gene_bed_file ./assets/data/gene.ensembl_havana.GRCh38.102.bed
 ```
 Use `--decay_rate_quantile` to adjust the decay rate threshold (default 0.5).
+
+## Features
+The default configuration uses the following features from each read:
+```
+quantile_phred	:	0.1   # q10 value in phred score distribution
+quantile_psi	:	0.99   # q99 value in P(psi) distribution
+use_in_del_ratio	:	1   # (I + D) / (M + I + D)
+use_u_ratio	:	1   # num(U) / num(all bases)
+use_mapq	:	1   # read mapping quality
+read_len_min	:	50   # read_len_min / np.clip(in_read.query_length, a_min=read_len_min)
+thresh_mod	:	0.5   # probability threshold for counting an A as m6A / U as psi
+```
+To turn off a feature, set value to -1 and retrain.
