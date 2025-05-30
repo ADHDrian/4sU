@@ -1,5 +1,5 @@
 # A simple classifier for 4sU-labelled reads
-Package requirements (version numbers not critical):
+Tested with python3.10. Package requirements (version numbers not critical):
 ```
 matplotlib==3.10.3
 numpy==1.23.5
