@@ -25,7 +25,6 @@ When the training is finished (should take less than 10 minutes), it will displa
 ```
 svm2
 Trained on 60000 reads, accuracy 0.794
-Finished
 ```
 
 The trained model and its config are saved to `${out_dir}`.
@@ -41,7 +40,6 @@ python3 validate_classifier.py \
 The output should look like:
 ```
 Validate on 32290 reads, accuracy 0.875
-Finished
 ```
 
 ## Inference
