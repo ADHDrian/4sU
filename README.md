@@ -53,3 +53,14 @@ python3 inference.py \
 --out_file ${out_file}
 ```
 `${out_file}` would be a tsv file with read names and 0/1 (unlabelled/labelled) that looks like `assets/inference/svm_chr2_24h.tsv`.
+
+## Data preparation
+The input data that are used for training and testing above are not all the possible reads, but those aligned to the fast-decaying transcripts / genes (in top 50% quantile). A script is provided to filter the raw bam files.
+```
+python3 filter_reads_by_transcript_decay_rate.py \
+--in_bam /prj/TRR319_RMaP_B01/Adrian/4sU/bam/hiPSC-CM_0h_4sU_chr1.bam \
+--out_bam /prj/TRR319_RMaP_B01/Adrian/4sU/bam/hiPSC-CM_0h_4sU_chr1.thresh0.5.bam \
+--decay_rate_file ./assets/data/gene-estimates-annotated-pulseRTc-0-1-2-4-6-8-16.csv \
+--gene_bed_file ./assets/data/gene.ensembl_havana.GRCh38.102.bed
+```
+Use `--decay_rate_quantile` to adjust the decay rate threshold (default 0.5).
