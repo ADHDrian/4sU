@@ -57,13 +57,13 @@ def get_read_length(in_read, read_len_min=100.0, a_max=5000.0):
     return read_len_min / np.clip(in_read.query_length, a_min=read_len_min, a_max=None)
 
 
-def get_mod_occupancy(in_read, in_mod, in_thesh_mod=0.5, min_locs=1):
+def get_mod_occupancy(in_read, in_mod, in_thresh_mod=0.5, min_locs=1):
     if in_read.modified_bases is None:
         mod_mean_occupancy = 0.0
     else:
         read_mod_probs = np.array([this_tup[1] for this_tup in in_read.modified_bases.get(mod_tags[in_mod], [])]) / 255.0
         if len(read_mod_probs) >= min_locs:
-            mod_mean_occupancy = np.mean(read_mod_probs >= in_thesh_mod)
+            mod_mean_occupancy = np.mean(read_mod_probs >= in_thresh_mod)
         else:
             mod_mean_occupancy = 0.0
     return mod_mean_occupancy
@@ -76,23 +76,42 @@ def get_norm_feature_mat(in_feature_mat):
     return out_feature_mat
 
 
-def get_features_from_reads(in_bam_file, in_cfg, return_read_name=False):
+def get_feature_extractor(in_cfg):
+    include_functions = []
+    if in_cfg.get('quantile_psi', -1) > 0:
+        include_functions.append(lambda x: get_read_mod_prob(x, in_mod='psi', in_quantile=in_cfg['quantile_psi']))
+    if in_cfg.get('quantile_m6A', -1) > 0:
+        include_functions.append(lambda x: get_read_mod_prob(x, in_mod='m6A', in_quantile=in_cfg['quantile_m6A']))
+    if in_cfg.get('quantile_phred', -1) > 0:
+        include_functions.append(lambda x: get_read_phred_score(x, in_quantile=in_cfg['quantile_phred']))
+    if in_cfg.get('use_in_del_ratio', -1) > 0:
+        include_functions.append(lambda x: get_in_del_ratio(x))
+    if in_cfg.get('use_u_ratio', -1) > 0:
+        include_functions.append(lambda x: get_u_ratio(x))
+    if in_cfg.get('use_mapq', -1) > 0:
+        include_functions.append(lambda x: get_mapq(x))
+    if in_cfg.get('read_len_min', -1) > 0:
+        include_functions.append(lambda x: get_read_length(x, read_len_min=in_cfg['read_len_min']))
+    if in_cfg.get('thresh_mod', -1) > 0:
+        include_functions.append(lambda x: get_mod_occupancy(x, in_mod='psi', in_thresh_mod=in_cfg['thresh_mod']))
+        include_functions.append(lambda x: get_mod_occupancy(x, in_mod='m6A', in_thresh_mod=in_cfg['thresh_mod']))
+
+    def _feature_extractor(in_read):
+        out_feature = []
+        for this_fcn in include_functions:
+            out_feature.append(this_fcn(in_read))
+        return out_feature
+
+    return _feature_extractor
+
+
+def get_features_from_reads(in_feature_extractor, in_bam_file, return_read_name=False):
     print(f'Collecting features from {in_bam_file}')
     read_features = []
     read_names = []
     with pysam.AlignmentFile(in_bam_file, 'rb') as bam:
         for read in tqdm(bam.fetch()):
-            read_features.append([
-                get_read_mod_prob(read, 'psi', in_cfg['quantile_psi']),
-                # get_read_mod_prob(read, 'm6A', in_cfg['quantile_m6A']),
-                get_read_phred_score(read, in_cfg['quantile_phred']),
-                get_in_del_ratio(read),
-                get_u_ratio(read),
-                get_mapq(read),
-                get_read_length(read, read_len_min=in_cfg['read_len_min']),
-                get_mod_occupancy(read, 'psi', in_cfg['thresh_mod']),
-                get_mod_occupancy(read, 'm6A', in_cfg['thresh_mod'])
-            ])
+            read_features.append(in_feature_extractor(read))
             read_names.append(read.query_name)
     feature_mat = np.vstack(read_features)
     if return_read_name:
@@ -102,13 +121,9 @@ def get_features_from_reads(in_bam_file, in_cfg, return_read_name=False):
 
 
 def get_feature_and_label(in_bam_pos, in_bam_neg, in_cfg, num_samples=100000):
-    # tp_feature = {tp: {} for tp in in_cfg['tps']}
-    # for tp in in_cfg['tps']:
-    #     # print(f'Collecting features from {tp}:')
-    #     tp_feature[tp] = get_features_from_reads(bam_files[tp], in_cfg)
-
-    feature_pos = get_features_from_reads(in_bam_pos, in_cfg)
-    feature_neg = get_features_from_reads(in_bam_neg, in_cfg)
+    feature_extractor = get_feature_extractor(in_cfg)
+    feature_pos = get_features_from_reads(feature_extractor, in_bam_pos)
+    feature_neg = get_features_from_reads(feature_extractor, in_bam_neg)
     actual_num_samples = min(min(feature_neg.shape[0], feature_pos.shape[0]), num_samples)
     # if actual_num_samples < num_samples:
     #     print(f'Actual num. samples used {actual_num_samples}')

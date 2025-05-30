@@ -1,6 +1,6 @@
 import os
 import numpy as np
-from helper_functions import load_model, get_features_from_reads
+from helper_functions import load_model, get_feature_extractor, get_features_from_reads
 from argparse import ArgumentParser
 
 
@@ -24,7 +24,8 @@ def main():
     args = parser.parse_args()
 
     clf, cfg = load_model(args)
-    test_X, test_read_names = get_features_from_reads(args.bam, cfg, return_read_name=True)
+    feature_extractor = get_feature_extractor(cfg)
+    test_X, test_read_names = get_features_from_reads(feature_extractor, args.bam, return_read_name=True)
     test_results = clf.predict(test_X)
     test_results = np.int64(test_results)
 
@@ -33,4 +34,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-    print('Finished')
