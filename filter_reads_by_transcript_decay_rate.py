@@ -57,7 +57,8 @@ def main():
     args = parser.parse_args()
 
     out_dir = os.path.dirname(args.out_bam)
-    os.makedirs(out_dir, exist_ok=True)
+    if len(out_dir):
+        os.makedirs(out_dir, exist_ok=True)
 
     df_gene_bed_thresh = get_thresholded_df_gene_bed(args.decay_rate_file, args.gene_bed_file, args.decay_rate_quantile)
     filter_bam_by_gene_bed(args.in_bam, args.out_bam, df_gene_bed_thresh)

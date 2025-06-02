@@ -6,7 +6,8 @@ from argparse import ArgumentParser
 
 def save_inference_results(in_read_names, in_results, in_args):
     out_dir = os.path.dirname(in_args.out_file)
-    os.makedirs(out_dir, exist_ok=True)
+    if len(out_dir):
+        os.makedirs(out_dir, exist_ok=True)
     with open(in_args.out_file, 'w') as f_out:
         for this_read_name, this_result in zip(in_read_names, in_results):
             f_out.write(f'{this_read_name}\t{this_result}\n')
