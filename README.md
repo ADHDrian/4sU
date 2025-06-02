@@ -44,7 +44,7 @@ Validate on 32290 reads, accuracy 0.875
 Run inference on reads without known labels:
 ```
 python3 inference.py \
---model_dir ./assets/train/svm2 \
+--model_dir ${out_dir}/svm2 \
 --bam /prj/TRR319_RMaP_B01/Adrian/4sU/bam/hiPSC-CM_24h_4sU_chr2.thresh.bam \
 --out_file ${out_file}
 ```
