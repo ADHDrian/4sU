@@ -25,7 +25,7 @@ svm2
 Trained on 60000 reads, accuracy 0.794
 ```
 
-The trained model and its config are saved to `${out_dir}`.
+The trained model and its config are saved to `${out_dir}` and should be similar to `assets/train/svm2`.
 
 ## Validate
 Validate a classifier on another set of reads with known labels:
