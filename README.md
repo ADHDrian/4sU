@@ -1,12 +1,10 @@
 # A simple classifier for 4sU-labelled reads
-Tested with python3.10. Package requirements (version numbers not critical):
+Tested with python3.10. To set up a virtual environment:
 ```
-matplotlib==3.10.3
-numpy==1.23.5
-pandas==2.2.3
-pysam==0.22.0
-scikit_learn==1.4.2
-tqdm==4.64.1
+module load python3/3.10.13_deb12
+python3 -m venv .venv
+. .venv/bin/activate
+pip install -r requirements.txt
 ```
 
 ## Train
