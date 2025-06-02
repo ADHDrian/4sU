@@ -31,7 +31,7 @@ The trained model and its config are saved to `${out_dir}`.
 Validate a classifier on another set of reads with known labels:
 ```
 python3 validate_classifier.py \
---model_dir ./assets/train/svm2 \
+--model_dir ${out_dir}/svm2 \
 --bam_positive /prj/TRR319_RMaP_B01/Adrian/4sU/bam/hiPSC-CM_24h_4sU_chr3.thresh.bam \
 --bam_negative /prj/TRR319_RMaP_B01/Adrian/4sU/bam/hiPSC-CM_0h_4sU_chr3.thresh.bam
 ```
