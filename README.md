@@ -181,3 +181,6 @@ remora \
   --log-filename ${log} \
   --device 0
 ```
+Average 4sU modification probability per read:
+![](https://github.com/dieterich-lab/4sU/blob/main/assets/images/hist_4sU_dist_chr2.png)
+![](https://github.com/dieterich-lab/4sU/blob/main/assets/images/hist_4sU_dist_chr3.png)
