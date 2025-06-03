@@ -73,3 +73,111 @@ read_len_min	:	50   # read_len_min / np.clip(in_read.query_length, a_min=read_le
 thresh_mod	:	0.5   # probability threshold for counting an A as m6A / U as psi
 ```
 To turn off a feature, set value to -1 and retrain.
+
+# Note on using remora, kmer and move tables
+Besides using read-level features, we also experimented with using ONT remora (https://github.com/nanoporetech/remora) together with their RNA004 kmer models (https://github.com/nanoporetech/kmer_models) to predict position-based 4sU tags directly from the raw signal and move table. The following is a sketch of the steps taken:
+## Data preparation
+Recall the pod5 reads with `--emit-moves` turned on in dorado:
+```
+module load dorado/0.9.1
+
+pod5=/prj/TRR319_RMaP_B01/Isabel/20240702_hiPSC-CM_4sU_RNA004/hiPSC-CM_0h_4sU_RTA/20240702_1607_1E_PAS90949_18e6fa36/pod5
+bam=/prj/TRR319_RMaP_B01/Adrian/4sU/move_table/hiPSC-CM_0h_4sU_RTA.bam
+model=/home/achan/dorado_models/rna004_130bps_sup@v5.1.0
+
+sbatch -p gpu -c 4 --mem 100GB \
+--wrap="dorado basecaller ${model} ${pod5} --recursive --modified-bases m5C inosine_m6A pseU -x cuda:0 --estimate-poly-a --emit-moves > ${bam}"
+```
+Align the reads, threshold them by decay rate as before, then use remora to chunkify the raw signals. The `--reverse-signal` flag is essential for dRNA, as the signal starts from the 3' end, unlike the DNA signal that starts from 5'.
+```
+pod5="/prj/TRR319_RMaP_B01/Isabel/20240702_hiPSC-CM_4sU_RNA004/hiPSC-CM_24h_4sU_RTA/20240702_1607_1F_PAS90977_9ece4d04/pod5"
+bam="/prj/TRR319_RMaP_B01/Adrian/4sU/move_table/hiPSC-CM_24h_4sU.chr1.thresh.bam"
+levels="/home/achan/git/kmer_models/rna004/9mer_levels_v1.txt"
+out_dir="/prj/TRR319_RMaP_B01/Adrian/4sU/move_table/remora/chunks_24h_chr1"
+
+srun -c 40 --mem 150GB \
+remora \
+  dataset prepare \
+  ${pod5} \
+  ${bam} \
+  --output-path ${out_dir} \
+  --refine-kmer-level-table ${levels} \
+  --refine-rough-rescale \
+  --reverse-signal \
+  --motif T 0 \
+  --mod-base 20480 4sU
+  
+
+pod5="/prj/TRR319_RMaP_B01/Isabel/20240702_hiPSC-CM_4sU_RNA004/hiPSC-CM_0h_4sU_RTA/20240702_1607_1E_PAS90949_18e6fa36/pod5"
+bam="/prj/TRR319_RMaP_B01/Adrian/4sU/move_table/hiPSC-CM_0h_4sU.chr1.thresh.bam"
+levels="/home/achan/git/kmer_models/rna004/9mer_levels_v1.txt"
+out_dir="/prj/TRR319_RMaP_B01/Adrian/4sU/move_table/remora/chunks_0h_chr1"
+
+srun -c 40 --mem 150GB \
+remora \
+  dataset prepare \
+  ${pod5} \
+  ${bam} \
+  --output-path ${out_dir} \
+  --refine-kmer-level-table ${levels} \
+  --refine-rough-rescale \
+  --reverse-signal \
+  --motif T 0 \
+  --mod-base-control
+```
+Create a json config for the datasets:
+```
+json="/prj/TRR319_RMaP_B01/Adrian/4sU/move_table/remora/train_dataset.json"
+ctrl="/prj/TRR319_RMaP_B01/Adrian/4sU/move_table/remora/chunks_0h_chr1"
+mod="/prj/TRR319_RMaP_B01/Adrian/4sU/move_table/remora/chunks_24h_chr1"
+log="/prj/TRR319_RMaP_B01/Adrian/4sU/move_table/remora/train_dataset.log"
+
+srun -c 40 --mem 150GB \
+remora \
+  dataset make_config \
+  ${json} \
+  ${ctrl} \
+  ${mod} \
+  --dataset-weights 1 1 \
+  --log-filename ${log}
+```
+## Training
+Once the datasets are prepared, the rest just follows the remora documentation:
+```
+model="/home/achan/git/remora/models/ConvLSTM_w_ref.py"
+json="/prj/TRR319_RMaP_B01/Adrian/4sU/move_table/remora/train_dataset.json"
+results="/prj/TRR319_RMaP_B01/Adrian/4sU/move_table/remora/train_results"
+
+srun -p gpu --gres=gpu:hopper:1 -c 10 --mem 150GB \
+remora \
+  model train \
+  ${json} \
+  --model ${model} \
+  --device 0 \
+  --chunk-context 50 50 \
+  --output-path ${results}
+```
+## Inference
+To run a trained model on other datasets:
+```
+model="/prj/TRR319_RMaP_B01/Adrian/4sU/move_table/remora/train_results/model_best.pt"
+
+tp="0h"
+chrom="chr3"
+
+pod5="/prj/TRR319_RMaP_B01/Isabel/20240702_hiPSC-CM_4sU_RNA004/hiPSC-CM_${tp}_4sU_RTA/*/pod5"
+in_bam="/prj/TRR319_RMaP_B01/Adrian/4sU/move_table/hiPSC-CM_${tp}_4sU.${chrom}.thresh.bam"
+out_bam="/prj/TRR319_RMaP_B01/Adrian/4sU/move_table/remora/inference/infer_${tp}.${chrom}.bam"
+log="/prj/TRR319_RMaP_B01/Adrian/4sU/move_table/remora/inference/infer_${tp}.${chrom}.log"
+
+srun -p gpu --gres=gpu:hopper:1 -c 10 --mem 150GB \
+remora \
+  infer from_pod5_and_bam \
+  ${pod5} \
+  ${in_bam} \
+  --model ${model} \
+  --reference-anchored \
+  --out-bam ${out_bam} \
+  --log-filename ${log} \
+  --device 0
+```
