@@ -16,7 +16,7 @@ def get_mod_prob_per_read(in_bam_file, mod_code = ('T', 0, 20480)):
 
 
 tps = ['0h', '24h']
-chrom = 'chr3'
+chrom = 'chr2'
 bam_files = {
     this_tp: f'/home/adrian/Data/TRR319_RMaP_B01/Adrian/4sU/move_table/remora/inference/infer_{this_tp}.{chrom}.sorted.bam'
     for this_tp in tps

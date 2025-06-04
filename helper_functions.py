@@ -11,7 +11,8 @@ random.seed(0)
 
 mod_tags = {
     'm6A': ('A', 0, 'a'),
-    'psi': ('T', 0, 17802)
+    'psi': ('T', 0, 17802),
+    '4sU': ('T', 0, 20480)
 }
 
 
@@ -20,6 +21,13 @@ def get_read_mod_prob(in_read, in_mod, in_quantile):
         return 0.0
     pos_prob = in_read.modified_bases.get(mod_tags[in_mod], [(0, 0.0)])
     return np.quantile([prob for pos, prob in pos_prob], in_quantile) / 255.0
+
+
+def get_mean_mod_prob(in_read, in_mod):
+    if in_read.modified_bases is None:
+        return 0.0
+    pos_prob = in_read.modified_bases.get(mod_tags[in_mod], [(0, 0.0)])
+    return np.mean([prob for pos, prob in pos_prob]) / 255.0
 
 
 def get_read_phred_score(in_read, in_quantile):
@@ -95,6 +103,8 @@ def get_feature_extractor(in_cfg):
     if in_cfg.get('thresh_mod', -1) > 0:
         include_functions.append(lambda x: get_mod_occupancy(x, in_mod='psi', in_thresh_mod=in_cfg['thresh_mod']))
         include_functions.append(lambda x: get_mod_occupancy(x, in_mod='m6A', in_thresh_mod=in_cfg['thresh_mod']))
+    if in_cfg.get('use_4sU_tag', -1) > 0:
+        include_functions.append(lambda x: get_mean_mod_prob(x, in_mod='4sU'))
 
     def _feature_extractor(in_read):
         out_feature = []
