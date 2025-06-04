@@ -91,7 +91,7 @@ sbatch -p gpu -c 4 --mem 100GB \
 Align the reads, threshold them by decay rate as before, then use remora to chunkify the raw signals. The `--reverse-signal` flag is essential for dRNA, as the signal starts from the 3' end, unlike the DNA signal that starts from 5'.
 ```
 pod5="/prj/TRR319_RMaP_B01/Isabel/20240702_hiPSC-CM_4sU_RNA004/hiPSC-CM_24h_4sU_RTA/20240702_1607_1F_PAS90977_9ece4d04/pod5"
-bam="/prj/TRR319_RMaP_B01/Adrian/4sU/move_table/hiPSC-CM_24h_4sU.chr1.thresh.bam"
+bam="/prj/TRR319_RMaP_B01/Adrian/4sU/move_table/hiPSC-CM_24h_4sU.chr1.thresh0.75.bam"
 levels="/home/achan/git/kmer_models/rna004/9mer_levels_v1.txt"
 out_dir="/prj/TRR319_RMaP_B01/Adrian/4sU/move_table/remora/chunks_24h_chr1"
 
@@ -109,7 +109,7 @@ remora \
   
 
 pod5="/prj/TRR319_RMaP_B01/Isabel/20240702_hiPSC-CM_4sU_RNA004/hiPSC-CM_0h_4sU_RTA/20240702_1607_1E_PAS90949_18e6fa36/pod5"
-bam="/prj/TRR319_RMaP_B01/Adrian/4sU/move_table/hiPSC-CM_0h_4sU.chr1.thresh.bam"
+bam="/prj/TRR319_RMaP_B01/Adrian/4sU/move_table/hiPSC-CM_0h_4sU.chr1.thresh0.75.bam"
 levels="/home/achan/git/kmer_models/rna004/9mer_levels_v1.txt"
 out_dir="/prj/TRR319_RMaP_B01/Adrian/4sU/move_table/remora/chunks_0h_chr1"
 
@@ -166,7 +166,7 @@ tp="0h"
 chrom="chr3"
 
 pod5="/prj/TRR319_RMaP_B01/Isabel/20240702_hiPSC-CM_4sU_RNA004/hiPSC-CM_${tp}_4sU_RTA/*/pod5"
-in_bam="/prj/TRR319_RMaP_B01/Adrian/4sU/move_table/hiPSC-CM_${tp}_4sU.${chrom}.thresh.bam"
+in_bam="/prj/TRR319_RMaP_B01/Adrian/4sU/move_table/hiPSC-CM_${tp}_4sU.${chrom}.thresh0.75.bam"
 out_bam="/prj/TRR319_RMaP_B01/Adrian/4sU/move_table/remora/inference/infer_${tp}.${chrom}.bam"
 log="/prj/TRR319_RMaP_B01/Adrian/4sU/move_table/remora/inference/infer_${tp}.${chrom}.log"
 
