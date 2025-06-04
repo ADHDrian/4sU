@@ -163,7 +163,7 @@ To run a trained model on other datasets:
 model="/prj/TRR319_RMaP_B01/Adrian/4sU/move_table/remora/train_results/model_best.pt"
 
 tp="0h"
-chrom="chr3"
+chrom="chr2"
 
 pod5="/prj/TRR319_RMaP_B01/Isabel/20240702_hiPSC-CM_4sU_RNA004/hiPSC-CM_${tp}_4sU_RTA/*/pod5"
 in_bam="/prj/TRR319_RMaP_B01/Adrian/4sU/move_table/hiPSC-CM_${tp}_4sU.${chrom}.thresh0.75.bam"
