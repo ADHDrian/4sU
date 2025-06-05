@@ -77,6 +77,20 @@ def get_mod_occupancy(in_read, in_mod, in_thresh_mod=0.5, min_locs=1):
     return mod_mean_occupancy
 
 
+def get_mean_base_dwell_times(in_read, in_base='T', in_max=200.0):
+    stride = in_read.get_tag('mv')[0]
+    mv_tag = np.array(in_read.get_tag('mv')[1:])
+    seq = in_read.get_forward_sequence()
+    base_occupancy = np.cumsum(mv_tag)
+    u_locs = np.where(np.array(list(seq)) == in_base)[0]
+    dwell_times = []
+    for this_u_loc in u_locs:
+        this_dwell_time = np.sum(base_occupancy == this_u_loc)*stride
+        if this_dwell_time > 0:
+            dwell_times.append(this_dwell_time)
+    return np.mean(dwell_times) / in_max
+
+
 def get_norm_feature_mat(in_feature_mat):
     # out_feature_mat = in_feature_mat - np.mean(in_feature_mat, axis=0)
     # out_feature_mat = in_feature_mat / np.std(in_feature_mat, axis=0)
@@ -105,6 +119,8 @@ def get_feature_extractor(in_cfg):
         include_functions.append(lambda x: get_mod_occupancy(x, in_mod='m6A', in_thresh_mod=in_cfg['thresh_mod']))
     if in_cfg.get('use_4sU_tag', -1) > 0:
         include_functions.append(lambda x: get_mean_mod_prob(x, in_mod='4sU'))
+    if in_cfg.get('use_mv', -1) > 0:
+        include_functions.append(lambda x: get_mean_base_dwell_times(x))
 
     def _feature_extractor(in_read):
         out_feature = []

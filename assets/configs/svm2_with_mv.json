@@ -1,0 +1,1 @@
+{"name": "svm2", "quantile_phred": 0.1, "quantile_psi": 0.99, "use_in_del_ratio": 1, "use_u_ratio": 1, "use_mapq": 1, "read_len_min": 50, "use_mv": 1, "num_train_samples": 30000, "thresh_mod": 0.5, "normalize": false, "svm_kernel": "poly", "svm_c": 1.0, "svm_degree": 2}
